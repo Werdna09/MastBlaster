@@ -165,4 +165,9 @@ assets/
 - **Design a vývoj:** Ondřej Škubala a Jan Souhrada  
 - **Konzultace:** kolegové a studenti  
 - **Technologie:** C++, SFML  
-- **Rok:** 2025  
+- **Rok:** 2025 
+
+---
+
+### Dev log
+*Initial Git learning test.*
