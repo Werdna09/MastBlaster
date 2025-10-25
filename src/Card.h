@@ -1,6 +1,7 @@
 #pragma once
 #include <SFML/Graphics.hpp>
 #include <SFML/Graphics/Rect.hpp>
+#include <SFML/System/Vector2.hpp>
 
 class Card {
 public:
@@ -9,6 +10,10 @@ public:
     void draw(sf::RenderWindow& window);
     void handleEvent(const sf::Event& event, const sf::RenderWindow& window);
     void update();
+
+    void setPosition(sf::Vector2f pos){
+        sprite_.setPosition(pos);
+    }
 
     sf::FloatRect getGlobalBounds() const {
         return sprite_.getGlobalBounds();

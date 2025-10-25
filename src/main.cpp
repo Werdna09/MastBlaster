@@ -1,5 +1,9 @@
 #include <SFML/Graphics.hpp>
 #include "Card.h"
+#include "Slot.h"
+#include "NumberSprite.h"
+#include <SFML/Graphics/Rect.hpp>
+#include <SFML/System/Vector2.hpp>
 #include <vector>
 #include <iostream>
 
@@ -12,6 +16,8 @@ int main() {
         std::cerr << "Nelze načíst cards.png\n";
         return 1;
     }
+    
+    NumberSprite n(cardTexture, 125, {200.f, 100.f});
 
     const int CARD_WIDTH = 80;
     const int CARD_HEIGHT = 112;
@@ -21,6 +27,12 @@ int main() {
         sf::IntRect rect({i * CARD_WIDTH, 0}, {CARD_WIDTH, CARD_HEIGHT});
         cards.emplace_back(cardTexture, rect, sf::Vector2f(100.f + i * 180.f, 500.f));
     }
+
+    std::vector<Slot> slots = {
+        Slot({200.f, 250.f}),
+        Slot({400.f, 250.f}),
+        Slot({600.f, 250.f})
+    };
 
     while (window.isOpen()) {
         while (auto event = window.pollEvent()) {
@@ -36,11 +48,27 @@ int main() {
                 if (cards[i].isBeingDraged()) {
                     cards[i].handleEvent(*event, window);
 
-                    if (event->is<sf::Event::MouseButtonReleased>())
-                        eventHandled = false;
-                    else
-                        eventHandled = true;
+                    if (event->is<sf::Event::MouseButtonReleased>()) {
+                        for (auto& slot : slots) {
+                            slot.setHighlight(false);
 
+                            if (slot.contains(cards[i].getGlobalBounds())) {
+                                // Snapuní karty na střed slotu
+                                sf::Vector2f center = slot.getCenter();
+                                sf::FloatRect bounds = cards[i].getGlobalBounds();
+
+                                cards[i].setPosition({center.x - bounds.size.x / 2.f, center.y - bounds.size.y / 2.f});
+                            }
+                        }
+
+                        eventHandled = true;
+                   
+                    } else {
+                        // Highlightne slot pokud je nad ním karta
+                        for (auto& slot : slots) {
+                            slot.setHighlight(slot.contains(cards[i].getGlobalBounds()));
+                        }
+                    }
                     continue;
                 }
 
@@ -76,6 +104,16 @@ int main() {
             card.update();
 
         window.clear(sf::Color(25, 25, 25));
+    
+        // Čísla
+        n.draw(window);
+
+        // sloty
+        for (auto& slot : slots) {
+            slot.draw(window);
+        }
+
+        // karty
         for (auto& card : cards)
             card.draw(window);
         window.display();
