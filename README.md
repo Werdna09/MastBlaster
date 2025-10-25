@@ -162,7 +162,7 @@ assets/
 ---
 
 ## Autoři projektu
-- **Design a vývoj:** Ondřej Škubala
+- **Design a vývoj:** Ondřej Škubala a Jan Souhrada
 - **Konzultace:** kolegové a studenti  
 - **Technologie:** C++, SFML  
 - **Rok:** 2025 
