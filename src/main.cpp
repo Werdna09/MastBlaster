@@ -18,30 +18,58 @@ int main() {
 
     std::vector<Card> cards;
     for (int i = 0; i < 4; ++i) {
-        // SFML 3: používá dva vektory – pozici a velikost
         sf::IntRect rect({i * CARD_WIDTH, 0}, {CARD_WIDTH, CARD_HEIGHT});
         cards.emplace_back(cardTexture, rect, sf::Vector2f(100.f + i * 180.f, 500.f));
     }
 
     while (window.isOpen()) {
-        // SFML 3: pollEvent() vrací std::optional<Event>
         while (auto event = window.pollEvent()) {
-            if (event->is<sf::Event::Closed>()) {
+            if (event->is<sf::Event::Closed>())
                 window.close();
-            }
 
-            // SFML 3: klik myší = Event::MouseButtonPressed
-            if (event->is<sf::Event::MouseButtonPressed>()) {
-                auto data = event->getIf<sf::Event::MouseButtonPressed>();
-                if (data && data->button == sf::Mouse::Button::Left) {
-                    for (auto& card : cards)
-                        card.handleEvent(*event, window);
+            bool eventHandled = false;
+
+            // Procházej karty odzadu (od nejvyšší k nejnižší)
+            for (int i = static_cast<int>(cards.size()) - 1; i >= 0 && !eventHandled; --i) {
+
+                // Pokud se tahá tato karta → zpracuj jen ji
+                if (cards[i].isBeingDraged()) {
+                    cards[i].handleEvent(*event, window);
+
+                    if (event->is<sf::Event::MouseButtonReleased>())
+                        eventHandled = false;
+                    else
+                        eventHandled = true;
+
+                    continue;
+                }
+
+                // Kliknutí na kartu
+                if (event->is<sf::Event::MouseButtonPressed>()) {
+                    auto data = event->getIf<sf::Event::MouseButtonPressed>();
+                    if (data && data->button == sf::Mouse::Button::Left) {
+                        sf::Vector2f mousePos = sf::Vector2f(sf::Mouse::getPosition(window));
+
+                        if (cards[i].getGlobalBounds().contains(mousePos)) {
+                            // Zpracuj klik pro tuto kartu
+                            cards[i].handleEvent(*event, window);
+
+                            // Zvedni kartu "nahoru"
+                            Card top = cards[i];
+                            cards.erase(cards.begin() + i);
+                            cards.push_back(top);
+
+                            eventHandled = true; // důležité — stop
+                            break;                // konec smyčky
+                        }
+                    }
+                }
+
+                // pokud se event nevyřešil, zkus pohyb atd.
+                if (!eventHandled) {
+                    cards[i].handleEvent(*event, window);
                 }
             }
-
-            // ostatní typy (pohyb, puštění tlačítka)
-            for (auto& card : cards)
-                card.handleEvent(*event, window);
         }
 
         for (auto& card : cards)
