@@ -1,173 +1,142 @@
-# Math Blaster: The Equation Chronicles
+# 🧩 Mathmosaic: Vertex Nexus
 
-> *„Když matematika ožije, symbolem se stává tvá zbraň.“*  
-
----
-
-## Základní idea
-
-**Math Blaster** je logicko-strategická hra propojující **matematiku, historii a karetní mechaniky**.  
-Hráč používá **matematické symboly jako karty**, kterými řeší rovnice, algebraické výrazy a logické výroky.  
-Každý level představuje **epochu dějin matematiky** – a v ní slavného matematika, který hráči předá nové symboly a poznání.  
+> *„Když se čísla setkají na vrcholu, probudí se rovnice.“*  
 
 ---
 
-## Herní princip
+## Základní idea  
 
-- Tahová karetní hra: každé kolo se hráčovi rozdá sada karet se symboly (např. `+`, `−`, `×`, `÷`, `^`, `√`, `log`, `sin` …).  
-- Cílem je **doplňovat rovnice** (např. `3 [] 6 = 9`) správnými symboly.  
-- Každá karta má **cenu (mana)**, **efekt (sílu)** a **typ (aritmetická, funkční, logická)**.  
-- Hráč má omezený počet tahů a musí **přemýšlet strategicky**, jak své karty použít.  
-- Po vyřešení všech rovnic přechází do další epochy – s novými symboly a složitější logikou.
+**Mathmosaic** je logicko-strategická hra na hexové mřížce.  
+Každá destička (*tile*) má na svých hranolcích čísla a operátory.  
+Když se tři hrany z různých tiles protnou v jednom bodu (*vortex*),  
+vyhodnotí se mini-rovnice – a svět matematiky ožije.  
+
+Cílem je vytvářet validní kombinace, řetězit výpočty a získávat body za logické i strategické umístění destiček.  
 
 ---
 
-## Herní flow
+## Herní princip  
 
-1. **Začátek levelu:**  
-   - Zobrazí se mentor (např. Al-Chvárizmí, Descartes…).  
-   - Hráč dostane 5 karet a určitý počet many.  
-   - Na obrazovce jsou 3–5 rovnic.
+- Hexová mřížka (6 směrů místo 4).  
+- Každý tile má 6 hranic: může na nich být číslo (1–13), operátor (+ − × ÷) nebo nic.  
+- Když tři hrany z různých tiles sdílí společný bod, vznikne **vortex**.  
+- Pokud má vortex 2 čísla a 1 operátor → proběhne výpočet.  
+- Pokud má 3 čísla / 3 operátory → penalizace.  
+
+---
+
+## Herní flow  
+
+1. **Začátek hry:**  
+   - Hráč má zásobu tiles (20 ks).  
+   - Každý tile je náhodně vygenerovaný (čísla a operátory na hranicích).  
 
 2. **Tah hráče:**  
-   - Vybere kartu a použije ji do `[]` v rovnici.  
-   - Hra výraz vyhodnotí a porovná výsledek:  
-     - *Správně:* rovnice se vyřeší.  
-     - *Přesně / silně:* způsobí “overkill” (bonus).  
-     - *Špatně:* rovnice se „brání“ nebo přidá penalizaci.
+   - Položí tile na volné místo v mřížce.  
+   - Hra zkontroluje 6 vortexů kolem destičky.  
+   - Každý validní vortex se vyhodnotí → body + bonusy.  
+   - Neplatné vortexy → penalizace.  
 
-3. **Konec kola:**  
-   - Pokud jsou všechny rovnice vyřešeny → hráč získává nové karty.  
-   - Pokud dojde mana nebo tahy → konec kola / prohra.
+3. **Odměny a penalty:**  
+   - Výsledek = 7 nebo 11 → + 1 tile.  
+   - Výsledek = 13 → „zlatý vortex“ (+ bonus body, efekt).  
+   - Neplatný vortex → − max(hodnoty).  
 
-4. **Boss fight:**  
-   - Boss (např. „Algebrion“) má 100 HP.  
-   - Rovnice působí damage podle výsledku (`3 × 6 = 18` → boss −18 HP).  
-   - Silnější operace (`^`, `√`) mají vyšší cenu many, ale i větší účinek.  
-   - Cílem je porazit bosse v co nejmenším počtu tahů.
+4. **Konec hry:**  
+   - Jakmile dojdou tiles, sečte se skóre.  
 
 ---
 
-## Historické epochy
+## Výpočet vortexu  
 
-| Éra | Mentor | Nové symboly / koncepty | Styl a téma |
-|------|---------|---------------------------|--------------|
-| **Antika** | Pythagoras / Diogénes | `+`, `−` | Řecké vzorce, harmonie čísel |
-| **Arabská éra** | Al-Chvárizmí | `×`, `÷`, `=` | Pergameny, algoritmy |
-| **Renesance** | Descartes | `x`, `y`, grafické zobrazení | Kartézská rovina |
-| **Novověk** | Euler / Gauss | `√`, `sin`, `f(x)` | Formální funkce |
-| **19.–20. století** | Boole / Gödel / Turing | `∧`, `∨`, `¬`, `→` | Logické systémy |
-| **Moderní éra** | Hilbert / Cantor / Noetherová | `∞`, `∪`, `⊂` | Abstraktní struktury a množiny |
+| Kombinace | Akce | Body |
+|------------|------|------|
+| 2 čísla + 1 operátor | Výpočet | = výsledná hodnota |
+| 3 čísla / 3 operátory | Chyba | − max hodnota |
+| Jiná kombinace | Nic | 0 |
 
-Každý mentor hráči vysvětlí nové symboly a nabídne výzvu, která odpovídá jeho oboru.
+Výsledky > 13 zůstávají – mohou řetězit další reakce.  
+Součet všech validních vortexů = aktuální skóre.  
 
 ---
 
-## Karetní systém
+## Bodování a bonusy  
 
-Každá karta má atributy:
-
-| Parametr | Popis |
+| Výsledek | Efekt |
 |-----------|--------|
-| **Symbol** | Znak operace (`+`, `×`, `^`, `∨`...) |
-| **Typ** | Aritmetická / Algebraická / Logická |
-| **Cena (Mana)** | Kolik stojí zahrání (např. 1–5) |
-| **Síla / Efekt** | Kolik HP ubere rovnice / bossovi |
-| **Rarita** | Běžná / Vzácná / Legendární (např. `^`, `√`) |
+| 5 | + 1 bod |
+| 7 | + 1 tile |
+| 11 | + 2 tiles |
+| 13 | „stabilní tile“ – nelze dále měnit |
+| Nevalidní | − max(vortex hodnoty) |
 
 ---
 
-## Boss systém
+## Technická architektura  
 
-Boss má vlastní:
-- **HP** (např. 100)  
-- **Slabiny** (např. „odolný vůči +, slabý proti ×“)  
-- **Speciální efekty** (může měnit rovnice, přidávat překážky)  
+**Jazyk:** C++ 17  
+**Knihovna:** raylib  
+**Build:** CMake  
+**Cíl:** Windows / Linux  
 
-Vyhodnocení příkladu:
-```
-3 [] 6 = 9
-  ↑
-  karta: ×  (cena 2, síla 18)
-→ damage: 18
-→ boss HP: 82
-```
+### Struktura souborů  
 
----
-
-## Technická architektura
-
-**Jazyk:** C++  
-**Knihovna:** SFML (Simple and Fast Multimedia Library)  
-**Cíl:** Desktop (Windows, Linux)
-
-## Struktura souborů:
 ```
 src/
  ├── main.cpp
  ├── Game.cpp / Game.h
- ├── Player.cpp / Player.h
- ├── Card.cpp / Card.h
- ├── Equation.cpp / Equation.h
- ├── Boss.cpp / Boss.h
- ├── Level.cpp / Level.h
- └── UI.cpp / UI.h
+ ├── Board.cpp / Board.h
+ ├── Tile.cpp / Tile.h
+ ├── Vertex.cpp / Vertex.h
+ └── Edge.cpp / Edge.h
+include/
 assets/
- ├── fonts/
- ├── music/
- ├── textures/
- └── levels/
-      ├── level1.json
-      ├── level2.json
-      └── boss1.json
+build/
 ```
 
-## Základní třídy:
-- `Game` – hlavní smyčka, správa stavu hry  
-- `Player` – informace o ruce, maně a kartách  
-- `Card` – jednotlivé symboly a efekty  
-- `Equation` – objekt s rovnicí a logikou vyhodnocení  
-- `Boss` – objekt s HP, slabinami a reakcemi  
-- `UI` – texty, mana, skóre, vizuální rozhraní  
+### Základní třídy  
+
+| Třída | Popis |
+|--------|--------|
+| `Game` | hlavní smyčka + UI + skóre |
+| `Board` | správa mřížky, vortexů, umístění |
+| `Tile` | 6 hran, pozice, rotace |
+| `Edge` | typ (None, Number, Operator) + hodnota |
+| `Vertex` | trojice hran → vyhodnocení rovnice |
+| `ScoreEngine` | výpočet bodů a bonusů |
 
 ---
 
-## Vývojový plán
+## Vývojový plán  
 
 | Fáze | Popis | Cíl |
 |------|--------|-----|
-| I. Koncept | Dokončení návrhu (flow, mechaniky, objekty) | Kompletní dokumentace |
-| II. Engine Setup | Základní SFML engine, okno, vstupy | Spustitelný prázdný loop |
-| III. Aritmetika | Rovnice `3 [] 6 = 9`, základní evaluace | První hratelný prototyp |
-| IV. Karetní systém | Přidat karty, manu a ruce | Hratelná logická tahová verze |
-| V. Boss fight | HP systém, damage, animace | Finální prototyp |
-| VI. Mentors & Lore | Dialogy, odemykání symbolů, zvuk | Prezentovatelná verze |
+| I. Koncept | Dokončit pravidla a dokumentaci | Přehledný design |
+| II. Engine setup | Okno, mřížka, tile renderer | První vizuální build |
+| III. Logika vortexů | Detekce a výpočet tří hran | Základ bodování |
+| IV. Score & bonusy | Systém body / tiles | Herní loop |
+| V. Efekty a UI | Animace, zvuky, barvy | Prezentovatelná verze |
+| VI. Balanc & testy | Doladění matematiky a obtížnosti | Finální prototyp |
 
 ---
 
-## Atmosféra & styl
+## Atmosféra a styl  
 
-- **Vizuál:** staré rukopisy, pergameny, křídové tabule.  
-- **Hudba:** ambientní – antické struny, arabské melodie, cembalo, elektronický logický ambient.  
-- **UI styl:** jednoduchý, kontrastní, připomínající učebnici.  
-
----
-
-## Cíl projektu
-> Vytvořit vzdělávací, esteticky působivou a herně zajímavou hru,  
-> která propojí matematické principy, historické myšlení a logickou strategii.  
->  
-> Hráč se neučí vzorce – učí se *přemýšlet jako matematik.*
+- **Vizuál:** čistá geometrie – šestiúhelníky, barevné linky, světelné vortexy.  
+- **Hudba:** ambientní, elektronicko-logická („počítací flow“).  
+- **UI:** minimalistické – čísla a symboly svítí podle aktivity.  
 
 ---
 
-## Autoři projektu
-- **Design a vývoj:** Ondřej Škubala a Jan Souhrada  
-- **Konzultace:** kolegové a studenti  
-- **Technologie:** C++, SFML  
-- **Rok:** 2025 
+## Cíl projektu  
+
+> Vytvořit originální logickou hru, kde matematika není úkol,  
+> ale živý organismus – síť výpočtů, která roste a mění se s každým tahem.  
 
 ---
 
-### Dev log
-*Initial Git learning test.*
+## Autor  
+
+**Ondřej Škubala**  
+učitel matematiky a informatiky  
+📍 *2025 – Mathmosaic Project*
