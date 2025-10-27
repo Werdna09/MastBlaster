@@ -137,6 +137,6 @@ build/
 
 ## Autor  
 
-**Ondřej Škubala**  
-učitel matematiky a informatiky  
+**Ondřej Škubala a Jan Souhrada**  
+učitelé matematiky a informatiky  
 📍 *2025 – Mathmosaic Project*
