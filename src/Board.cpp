@@ -1,6 +1,7 @@
 #include "Board.h"
 #include <cmath>
 #include <array>
+#include <cstdlib>
 #include <iostream>
 #include <vector>
 #include <algorithm>
@@ -113,6 +114,14 @@ void Board::handleClick(Vector2 mouse, Vector2 origin) {
     Vector2 p = hex_to_pixel(layout, hex);
     p.x += origin.x;
     p.y += origin.y;
+
+    // Kontrola borady, že je hráč v rozsahu
+    int R = 4;
+    int s = -hex.q - hex.r;
+    if (std::abs(hex.q) > R || std::abs(hex.r) > R || std::abs(s) > R) {
+        std::cout << "Out of bounds (" << hex.q << ", " << hex.r << ")\n";
+        return;
+    }
 
     float dx = mouse.x - p.x;
     float dy = mouse.y - p.y;
