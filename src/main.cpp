@@ -8,14 +8,22 @@ int main() {
     srand(time(nullptr));
 
     Board board;
-    Tile t1, t2, t3;
-    board.placeTile(1, 1, t1);
-    board.placeTile(1, 0, t2);
-    board.placeTile(0, 1, t3);
+    board.generateTileStack(4);
 
     Vector2 center = {640, 400};
 
     while (!WindowShouldClose()) {
+        Vector2 mouse = GetMousePosition();
+
+        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+            board.handleClick(mouse, center);
+        }
+
+        if (IsKeyPressed(KEY_R)) {
+            bool shiftHeld = IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT);
+            board.rotateSelectedTile(shiftHeld);
+        }
+
         BeginDrawing();
         ClearBackground(RAYWHITE);
 
@@ -25,6 +33,7 @@ int main() {
         // 💠 vykresli mřížku i všechny aktuální tile
         board.drawGrid(center, 4);
         board.draw(center);
+        board.drawTileStack(center);
 
         EndDrawing();
     }

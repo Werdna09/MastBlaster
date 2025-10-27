@@ -3,6 +3,7 @@
 #include "Tile.h"
 #include "Vertex.h"
 #include <map>
+#include <vector>
 #include <raylib.h>
 
 class Board {
@@ -11,7 +12,11 @@ private:
     int totalScore = 0;
     HexLayout layout{40.0f, true}; // velikost + pointy orientation
 
+    std::vector<Tile> tileStack;
+    int selectedIndex = 0;
+
 public:
+    // --- základní funkce ---
     void placeTile(int q, int r, const Tile &tile);
     void draw(Vector2 origin) const;
     void drawGrid(Vector2 origin, int radius = 4) const;
@@ -19,7 +24,16 @@ public:
 
     int getScore() const { return totalScore; }
 
+    // --- zásobník ---
+    void generateTileStack(int count = 3);
+    void drawTileStack(Vector2 origin) const;
+    void handleClick(Vector2 mouse, Vector2 origin);
+
+    // -- rotace ---
+    void rotateSelectedTile(bool counter = false);
+
 private:
     std::vector<Hex> getNeighbors(const Hex &h) const;
+    bool isOccupied(const Hex& h) const;
 };
 

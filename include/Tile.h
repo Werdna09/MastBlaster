@@ -12,5 +12,7 @@ struct Tile {
     Tile();
     void randomize();
     void draw(Vector2 center, float size, bool highlight = false) const;
+    void rotateClockwise();
+    void rotateCounterClockwise();
 };
 
