@@ -65,6 +65,7 @@ int main() {
         } else if (state == AppState::PLAYING) {
             // vstupy hry
             Vector2 mouse = GetMousePosition();
+            board.updateHover(mouse, center);
             if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
                 board.handleClick(mouse, center);
                 if (board.isGameOver()) {   // nová pomocná metoda
@@ -87,6 +88,8 @@ int main() {
             DrawText(TextFormat("Score: %d", board.getScore()), 560, 56, 22, BLACK);
 
             board.drawGrid(center, gridRadius);
+            board.drawHoverHighlight(center);
+            board.drawGhostTile(center);
             board.draw(center);
             board.drawTileStack(center);
 

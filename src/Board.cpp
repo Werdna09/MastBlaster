@@ -58,6 +58,7 @@ void Board::drawGrid(Vector2 origin, int radius) const {
     }
 }
 
+
 Hex Board::getHexAtPixel(Vector2 pixel, Vector2 origin) const {
     pixel.x -= origin.x;
     pixel.y -= origin.y;
@@ -232,5 +233,51 @@ int Board::evaluateVortexes(const std::vector<Vertex> &vortexes) {
             sum -= v.penaltyValue();
     }
     return sum;
+}
+
+void Board::updateHover(Vector2 mouse, Vector2 origin) {
+    Hex h = getHexAtPixel(mouse, origin);
+
+    // validace: mimo hranice hrací plochy -> zruší hover
+    int s = -h.q - h.r;
+    int R = 4;
+    if (std::abs(h.q) > R || std::abs(h.r) > R || std::abs(s) > R) {
+        hoverHex.reset();
+        return;
+    }
+
+    hoverHex = h;
+}
+
+void Board::drawHoverHighlight(Vector2 origin) const {
+    if (!hoverHex.has_value()) return;
+
+    Hex h = hoverHex.value();
+    Vector2 pos = hex_to_pixel(layout, h);
+    pos.x += origin.x;
+    pos.y += origin.y;
+
+    // zvýraznění hexu
+    DrawPolyLines(pos, 6, layout.size * 1.02f, 30, Fade(ORANGE, 0.6f));
+}
+
+void Board::drawGhostTile(Vector2 origin) const {
+    if (!hoverHex.has_value() || tileDeck.empty() || deckIndex >= (int)tileDeck.size())
+        return;
+
+    Hex h = hoverHex.value();
+    if (isOccupied(h)) return;
+
+    Vector2 p = hex_to_pixel(layout, h);
+    p.x += origin.x;
+    p.y += origin.y;
+
+    float ghostScale = 0.98f;
+    Color tint = {255,255,255,150};
+
+    const Tile &ghostTile = tileDeck[deckIndex];
+
+    ghostTile.draw(p, layout.size * ghostScale, false);
+    DrawPolyLines(p, 6, layout.size, 30, Fade(DARKGRAY, 0.5f));
 }
 

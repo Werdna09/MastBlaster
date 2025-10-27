@@ -2,6 +2,7 @@
 #include "Hex.h"
 #include "Tile.h"
 #include "Vertex.h"
+#include <optional>
 #include <map>
 #include <set>
 #include <tuple>
@@ -24,11 +25,14 @@ private:
     
     std::set<std::tuple<Hex, Hex, Hex>> evaluatedVortexSet;
 
+    mutable std::optional<Hex> hoverHex;
+
 public:
     // --- základní funkce ---
     void placeTile(int q, int r, const Tile &tile);
     void draw(Vector2 origin) const;
     void drawGrid(Vector2 origin, int radius = 4) const;
+    // --- okey toto nevím proč jsem tady měl --- ====>  void drawGhostTile(Vector2 origin) const;
     Hex getHexAtPixel(Vector2 pixel, Vector2 origin) const;
 
     int getScore() const { return totalScore; }
@@ -40,6 +44,11 @@ public:
     void generateTileDeck(int count = 50);
     void drawTileStack(Vector2 origin) const;
     void handleClick(Vector2 mouse, Vector2 origin);
+
+    // --- tvl nějaký hover už na to seru na ty popisy, stejně, když mám error, tak to fouknu do ChatGPT ---
+    void updateHover(Vector2 mouse, Vector2 origin);
+    void drawHoverHighlight(Vector2 origin) const;
+    void drawGhostTile(Vector2 origin) const;
 
     // --- rotace ---
     void rotateSelectedTile(bool counter = false);
