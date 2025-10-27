@@ -7,21 +7,21 @@
 
 void Board::placeTile(int q, int r, const Tile &tile) {
     Hex pos(q, r);
+    if (isOccupied(pos)) return;
+
     tiles[pos] = tile;
 
-    // Nasbírej všechny možné vortexy na celé mapě
-    std::vector<Vertex> all;
-    for (auto &[p, t] : tiles) {
-        auto local = getVortexesAround(p);
-        all.insert(all.end(), local.begin(), local.end());
-    }
-
-    int gain = evaluateVortexes(all);
+    auto vortexes = getVortexesAround(pos);
+    int gain = evaluateVortexes(vortexes);
     totalScore += gain;
 
-    std::cout << "Placed tile at (" << q << ", " << r 
-              << "), gained " << gain 
-              << " points. Total score: " << totalScore << std::endl;
+    // posun o jeden tile v decku
+    if (deckIndex < (int)tileDeck.size() - 1)
+        deckIndex++;
+
+    std::cout << "Placed tile at (" << q << ", " << r
+              << "), gained " << gain
+              << " points. Total: " << totalScore << std::endl;
 }
 
 
@@ -58,27 +58,41 @@ std::vector<Hex> Board::getNeighbors(const Hex &h) const {
         n.push_back(hex_neighbor(h, i));
     return n;
 }
-#include <cmath>
 
 // === ZÁSOBNÍK DLAŽDIC ===
+void Board::generateTileDeck(int count) {
+    tileDeck.clear();
+    tileDeck.reserve(count);
 
-void Board::generateTileStack(int count) {
+    for (int i = 0; i < count; ++i) {
+        Tile t;
+        t.randomize();
+        tileDeck.push_back(t);
+    }
+
     tileStack.clear();
-    for (int i = 0; i < count; ++i)
-        tileStack.emplace_back();  // volá Tile::Tile() → randomize()
-    selectedIndex = 0;
+    for (int i = 0; i < 3 && i < count; ++i)
+        tileStack.push_back(tileDeck[i]);
+
+    deckIndex = 3;
 }
 
 void Board::drawTileStack(Vector2 origin) const {
     float spacing = layout.size * 2.5f;
     Vector2 base = {origin.x + 400, origin.y - 100};
 
-    DrawText("Tile Stack:", base.x - 20, base.y - 80, 20, DARKGRAY);
+    DrawText(TextFormat("Deck: %d / %d", (int)tileDeck.size() - deckIndex, (int)tileDeck.size()),
+             base.x - 20, base.y - 100, 20, DARKGRAY);
+    DrawText("Next tiles:", base.x - 20, base.y - 70, 20, DARKGRAY);
 
-    for (int i = 0; i < (int)tileStack.size(); ++i) {
+    // zobraz náhled dalších previewCount dílků z decku
+    for (int i = 0; i < previewCount; ++i) {
+        int idx = deckIndex + i;
+        if (idx >= (int)tileDeck.size()) break;
+
         Vector2 pos = {base.x, base.y + i * spacing};
-        bool selected = (i == selectedIndex);
-        tileStack[i].draw(pos, layout.size, selected);
+        bool selected = (i == 0); // první je aktivní tile
+        tileDeck[idx].draw(pos, layout.size, selected);
     }
 }
 
@@ -95,7 +109,7 @@ void Board::handleClick(Vector2 mouse, Vector2 origin) {
         if (isOccupied(hex)) {
             return;
         }
-        Tile chosen = tileStack[selectedIndex];
+        Tile chosen = tileDeck[deckIndex];
         placeTile(hex.q, hex.r, chosen);
         tileStack[selectedIndex] = Tile(); // nahradíme novým
         return;
@@ -120,12 +134,12 @@ bool Board::isOccupied(const Hex& h) const {
 }
 
 void Board::rotateSelectedTile(bool counter) {
-    if (tileStack.empty()) return;
+    if (tileDeck.empty() || deckIndex >= (int)tileDeck.size()) return;
 
     if (counter)
-        tileStack[selectedIndex].rotateCounterClockwise();
+        tileDeck[deckIndex].rotateCounterClockwise();
     else
-        tileStack[selectedIndex].rotateClockwise();
+        tileDeck[deckIndex].rotateClockwise();
 }
 
 std::vector<Vertex> Board::getVortexesAround(const Hex &h) const {

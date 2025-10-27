@@ -11,12 +11,16 @@
 class Board {
 private:
     std::map<Hex, Tile> tiles;
-    std::set<std::tuple<Hex, Hex, Hex>> evaluatedVortexSet;
     int totalScore = 0;
-    HexLayout layout{40.0f, true}; // velikost + pointy orientation
+    HexLayout layout{40.0f, true};
 
     std::vector<Tile> tileStack;
+    std::vector<Tile> tileDeck;
     int selectedIndex = 0;
+    int deckIndex = 0;
+    int previewCount = 3;
+
+    std::set<std::tuple<Hex, Hex, Hex>> evaluatedVortexSet;
 
 public:
     // --- základní funkce ---
@@ -27,19 +31,17 @@ public:
 
     int getScore() const { return totalScore; }
 
-    // --- zásobník ---
-    void generateTileStack(int count = 3);
+    // --- zásobník / balíček ---
+    void generateTileDeck(int count = 50);
     void drawTileStack(Vector2 origin) const;
     void handleClick(Vector2 mouse, Vector2 origin);
 
-    // -- rotace ---
+    // --- rotace ---
     void rotateSelectedTile(bool counter = false);
 
 private:
     std::vector<Hex> getNeighbors(const Hex &h) const;
-    bool isOccupied(const Hex& h) const;
-
+    bool isOccupied(const Hex &h) const;
     std::vector<Vertex> getVortexesAround(const Hex &h) const;
     int evaluateVortexes(const std::vector<Vertex> &vortexes);
 };
-
