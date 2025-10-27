@@ -1,5 +1,7 @@
 #pragma once
 #include "Edge.h"
+#include "raylib.h"
+#include <cstdlib>
 #include <array>
 
 struct Tile {
@@ -8,5 +10,7 @@ struct Tile {
     int rotation = 0;          // 0–5
 
     Tile();
+    void randomize();
+    void draw(Vector2 center, float size, bool highlight = false) const;
 };
 

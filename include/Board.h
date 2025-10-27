@@ -1,29 +1,25 @@
 #pragma once
+#include "Hex.h"
 #include "Tile.h"
 #include "Vertex.h"
 #include <map>
-#include <vector>
-
-struct HexPos {
-    int q, r;
-
-    bool operator<(const HexPos &other) const{
-        return std::tie(q,r) < std::tie(other.q, other.r);
-    }
-};
+#include <raylib.h>
 
 class Board {
 private:
-    std::map<HexPos, Tile> tiles;
+    std::map<Hex, Tile> tiles;
     int totalScore = 0;
+    HexLayout layout{40.0f, true}; // velikost + pointy orientation
 
 public:
     void placeTile(int q, int r, const Tile &tile);
-    std::vector<Vertex> getVortexesAround(int q, int r) const;
-    int getScore() const {return totalScore;}
+    void draw(Vector2 origin) const;
+    void drawGrid(Vector2 origin, int radius = 4) const;
+    Hex getHexAtPixel(Vector2 pixel, Vector2 origin) const;
+
+    int getScore() const { return totalScore; }
 
 private:
-    std::vector<HexPos> getNeighbors(int g, int r) const;
-    int evaluateVortexes(const std::vector<Vertex> &vortexes);
-
+    std::vector<Hex> getNeighbors(const Hex &h) const;
 };
+
