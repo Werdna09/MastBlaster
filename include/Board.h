@@ -20,6 +20,8 @@ private:
     int deckIndex = 0;
     int previewCount = 3;
 
+    bool gameOver = false;
+    
     std::set<std::tuple<Hex, Hex, Hex>> evaluatedVortexSet;
 
 public:
@@ -30,6 +32,9 @@ public:
     Hex getHexAtPixel(Vector2 pixel, Vector2 origin) const;
 
     int getScore() const { return totalScore; }
+    bool isDeckEmpty() const { return deckIndex >= tileDeck.size(); }
+    bool isGameOver() const {return gameOver; }
+
 
     // --- zásobník / balíček ---
     void generateTileDeck(int count = 50);

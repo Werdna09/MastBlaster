@@ -6,6 +6,8 @@
 #include <algorithm>
 
 void Board::placeTile(int q, int r, const Tile &tile) {
+    if (gameOver) return;
+
     Hex pos(q, r);
     if (isOccupied(pos)) return;
 
@@ -15,9 +17,18 @@ void Board::placeTile(int q, int r, const Tile &tile) {
     int gain = evaluateVortexes(vortexes);
     totalScore += gain;
 
-    // posun o jeden tile v decku
-    if (deckIndex < (int)tileDeck.size() - 1)
-        deckIndex++;
+    ++deckIndex;
+
+    // Trouble šůt
+    std::cout << "Deck index: " << deckIndex << " / " << tileDeck.size() << std::endl;
+
+
+    if (deckIndex >= (int)tileDeck.size()) {
+        std::cout << "=== GAME OVER ===" << std::endl;
+        gameOver = true;
+        return;
+    }
+
 
     std::cout << "Placed tile at (" << q << ", " << r
               << "), gained " << gain
