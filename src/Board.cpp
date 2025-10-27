@@ -6,14 +6,21 @@ void Board::placeTile(int q, int r, const Tile &tile) {
     Hex pos(q, r);
     tiles[pos] = tile;
 
-    auto vortexes = getVortexesAround(pos);
-    int gain = evaluateVortexes(vortexes);
+    // Nasbírej všechny možné vortexy na celé mapě
+    std::vector<Vertex> all;
+    for (auto &[p, t] : tiles) {
+        auto local = getVortexesAround(p);
+        all.insert(all.end(), local.begin(), local.end());
+    }
+
+    int gain = evaluateVortexes(all);
     totalScore += gain;
 
-    std::cout << "Placed tile at (" << q << ", " << r << "), gained "
-                << gain
-                << " points. Total score: " << totalScore << std::endl;
+    std::cout << "Placed tile at (" << q << ", " << r 
+              << "), gained " << gain 
+              << " points. Total score: " << totalScore << std::endl;
 }
+
 
 void Board::draw(Vector2 origin) const {
     for (auto &[pos, tile] : tiles) {
@@ -145,9 +152,24 @@ std::vector<Vertex> Board::getVortexesAround(const Hex &h) const {
 
 int Board::evaluateVortexes(const std::vector<Vertex> &vortexes) {
     int sum = 0;
-    for (auto &v : vortexes) {
-        if (v.isValid()) sum += v.evaluate();
-        else sum -= v.penaltyValue();
+    for (int k = 0; k < (int)vortexes.size(); ++k) {
+        const auto& v = vortexes[k];
+        // ladicí výpis: jaké tři hrany se hodnotí
+        // (toString máš v Edge)
+        // printf by šel taky, jen pozor na řetězce
+        std::cout << "Vortex " << k << ": "
+                  << v.a.toString() << " | "
+                  << v.b.toString() << " | "
+                  << v.c.toString() << "  -> ";
+        if (v.isValid()) {
+            int val = v.evaluate();
+            std::cout << "+" << val << "\n";
+            sum += val;
+        } else {
+            int pen = v.penaltyValue();
+            std::cout << "-" << pen << "\n";
+            sum -= pen;
+        }
     }
     return sum;
 }

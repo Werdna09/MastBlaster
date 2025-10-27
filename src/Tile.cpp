@@ -9,15 +9,15 @@ Tile::Tile() {
 void Tile::randomize() {
     const char ops[] = {'+', '-', '*', '/'};
     for (auto &e : edges) {
-        int t = rand() % 3; // 0 = číslo, 1 = operátor, 2 = prázdno
-        if (t == 0) {
-            e = Edge(rand() % 13 + 1);  // náhodné číslo 1–13
+        int roll = rand() % 100;
+        if (roll < 50) {
+            e = Edge();                 // prázdná hrana 
         } 
-        else if (t == 1) {
-            e = Edge(ops[rand() % 4]);  // náhodný operátor
+        else if (roll < 80) {
+            e = Edge(rand() % 13 + 1);  // náhodné číslo
         } 
         else {
-            e = Edge();                 // prázdná hrana
+            e = Edge(ops[rand() % 4]);  // prázdná hrana
         }
     }
 }
