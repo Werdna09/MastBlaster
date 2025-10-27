@@ -5,7 +5,14 @@
 void Board::placeTile(int q, int r, const Tile &tile) {
     Hex pos(q, r);
     tiles[pos] = tile;
-    std::cout << "Placed tile at (" << q << ", " << r << ")\n";
+
+    auto vortexes = getVortexesAround(pos);
+    int gain = evaluateVortexes(vortexes);
+    totalScore += gain;
+
+    std::cout << "Placed tile at (" << q << ", " << r << "), gained "
+                << gain
+                << " points. Total score: " << totalScore << std::endl;
 }
 
 void Board::draw(Vector2 origin) const {
@@ -109,5 +116,39 @@ void Board::rotateSelectedTile(bool counter) {
         tileStack[selectedIndex].rotateCounterClockwise();
     else
         tileStack[selectedIndex].rotateClockwise();
+}
+
+std::vector<Vertex> Board::getVortexesAround(const Hex &h) const {
+    std::vector<Vertex> result;
+    auto neighbors = getNeighbors(h);
+
+    // každý hex má 6 sousedů → z nich lze vytvořit 6 kombinací (vortexů)
+    for (int i = 0; i < 6; ++i) {
+        Hex n1 = neighbors[i];
+        Hex n2 = neighbors[(i + 1) % 6];
+
+        auto itC = tiles.find(h);
+        auto it1 = tiles.find(n1);
+        auto it2 = tiles.find(n2);
+
+        if (itC != tiles.end() && it1 != tiles.end() && it2 != tiles.end()) {
+            // každá hrana má index odpovídající směru (i)
+            Edge e1 = itC->second.edges[i];              // hrana z aktuálního
+            Edge e2 = it1->second.edges[(i + 4) % 6];    // protější hrana souseda 1
+            Edge e3 = it2->second.edges[(i + 2) % 6];    // protější hrana souseda 2
+            result.push_back(Vertex{e1, e2, e3});
+        }
+    }
+
+    return result;
+}
+
+int Board::evaluateVortexes(const std::vector<Vertex> &vortexes) {
+    int sum = 0;
+    for (auto &v : vortexes) {
+        if (v.isValid()) sum += v.evaluate();
+        else sum -= v.penaltyValue();
+    }
+    return sum;
 }
 

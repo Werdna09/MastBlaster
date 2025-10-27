@@ -35,5 +35,8 @@ public:
 private:
     std::vector<Hex> getNeighbors(const Hex &h) const;
     bool isOccupied(const Hex& h) const;
+
+    std::vector<Vertex> getVortexesAround(const Hex &h) const;
+    int evaluateVortexes(const std::vector<Vertex> &vortexes);
 };
 
