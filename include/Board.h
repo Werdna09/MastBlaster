@@ -3,12 +3,15 @@
 #include "Tile.h"
 #include "Vertex.h"
 #include <map>
+#include <set>
+#include <tuple>
 #include <vector>
 #include <raylib.h>
 
 class Board {
 private:
     std::map<Hex, Tile> tiles;
+    std::set<std::tuple<Hex, Hex, Hex>> evaluatedVortexSet;
     int totalScore = 0;
     HexLayout layout{40.0f, true}; // velikost + pointy orientation
 

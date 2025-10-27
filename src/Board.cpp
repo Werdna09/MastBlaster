@@ -1,6 +1,9 @@
 #include "Board.h"
 #include <cmath>
+#include <array>
 #include <iostream>
+#include <vector>
+#include <algorithm>
 
 void Board::placeTile(int q, int r, const Tile &tile) {
     Hex pos(q, r);
@@ -127,24 +130,44 @@ void Board::rotateSelectedTile(bool counter) {
 
 std::vector<Vertex> Board::getVortexesAround(const Hex &h) const {
     std::vector<Vertex> result;
+
+    // Hledá sousdy
     auto neighbors = getNeighbors(h);
 
-    // každý hex má 6 sousedů → z nich lze vytvořit 6 kombinací (vortexů)
+    // Pokud tile neexistuje (a co když tu je), nic nepočítá
+    auto itC = tiles.find(h);
+    if (itC == tiles.end()) return result;
+    const Tile &center = itC->second;
+
+    // Pro každý roh hledáme (6 kolem hexu) - oprava PSÁT SPRÁVNĚ NEIGHBOR  
     for (int i = 0; i < 6; ++i) {
-        Hex n1 = neighbors[i];
-        Hex n2 = neighbors[(i + 1) % 6];
+        // soused vlevo a vpravo od aktuálního rohu
+        Hex left = neighbors[i];
+        Hex right = neighbors[(i + 1) % 6];
 
-        auto itC = tiles.find(h);
-        auto it1 = tiles.find(n1);
-        auto it2 = tiles.find(n2);
+        auto itL = tiles.find(left);
+        auto itR = tiles.find(right);
 
-        if (itC != tiles.end() && it1 != tiles.end() && it2 != tiles.end()) {
-            // každá hrana má index odpovídající směru (i)
-            Edge e1 = itC->second.edges[i];              // hrana z aktuálního
-            Edge e2 = it1->second.edges[(i + 4) % 6];    // protější hrana souseda 1
-            Edge e3 = it2->second.edges[(i + 2) % 6];    // protější hrana souseda 2
-            result.push_back(Vertex{e1, e2, e3});
-        }
+        // musí exisotvat všechny vole pčio au, všechny tiles (centrální + 2 sousedé)
+        if (itL == tiles.end() || itR == tiles.end()) continue;
+
+        const Tile &tileL = itL->second;
+        const Tile &tileR = itR->second;
+
+        // A teď pozor, jdem si vysvětlit tyto indexy, protože by ses po tom
+        // (tak za 30 miniut už ztratil
+        // Takže:
+        // i = roh smeřem od středu po směru hodinek
+        // hrana center[i] míří ven do souseda "i"
+        // Hrana tile[(i+2) % 6] míří k centru
+        // Hrana tile[(i+4) % 6] míří k centru
+        // -> tyto tři hrany se setjaí ve stejném hrou
+        
+        Edge eC = center.edges[i];
+        Edge eL = tileL.edges[(i + 2) % 6];
+        Edge eR = tileR.edges[(i + 4) % 6];
+
+        result.push_back(Vertex{eC, eL, eR, h, left, right});
     }
 
     return result;
@@ -152,24 +175,27 @@ std::vector<Vertex> Board::getVortexesAround(const Hex &h) const {
 
 int Board::evaluateVortexes(const std::vector<Vertex> &vortexes) {
     int sum = 0;
-    for (int k = 0; k < (int)vortexes.size(); ++k) {
-        const auto& v = vortexes[k];
-        // ladicí výpis: jaké tři hrany se hodnotí
-        // (toString máš v Edge)
-        // printf by šel taky, jen pozor na řetězce
-        std::cout << "Vortex " << k << ": "
-                  << v.a.toString() << " | "
-                  << v.b.toString() << " | "
-                  << v.c.toString() << "  -> ";
-        if (v.isValid()) {
-            int val = v.evaluate();
-            std::cout << "+" << val << "\n";
-            sum += val;
-        } else {
-            int pen = v.penaltyValue();
-            std::cout << "-" << pen << "\n";
-            sum -= pen;
-        }
+    for (auto &v : vortexes) {
+        // vytvoříme setříděný klíč (aby byla kombinace jedinečná bez ohledu na pořadí)
+        auto triple = std::array<Hex, 3>{v.ha, v.hb, v.hc};
+        std::sort(triple.begin(), triple.end(),
+                  [](const Hex &x, const Hex &y){
+                      return std::tie(x.q, x.r, x.s) < std::tie(y.q, y.r, y.s);
+                  });
+
+        auto key = std::make_tuple(triple[0], triple[1], triple[2]);
+
+        // ⛔ Pokud už byl tento vortex jednou započítán, přeskočíme ho
+        if (evaluatedVortexSet.find(key) != evaluatedVortexSet.end())
+            continue;
+        // ✅ Jinak ho uložíme jako nově spočítaný
+        evaluatedVortexSet.insert(key);
+
+        // 📈 Vyhodnocení bodů
+        if (v.isValid())
+            sum += v.evaluate();
+        else
+            sum -= v.penaltyValue();
     }
     return sum;
 }
