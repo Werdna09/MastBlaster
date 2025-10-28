@@ -6,6 +6,9 @@
 #include <vector>
 #include <algorithm>
 
+// ====================================================================
+//  Umístění dílku na herní plochu + výpočet bodů
+// ====================================================================
 void Board::placeTile(int q, int r, const Tile &tile) {
     if (gameOver) return;
 
@@ -14,15 +17,14 @@ void Board::placeTile(int q, int r, const Tile &tile) {
 
     tiles[pos] = tile;
 
+    // vyhodnocení všech vzniklých vortexů kolem nově položeného dílku
     auto vortexes = getVortexesAround(pos);
     int gain = evaluateVortexes(vortexes);
     totalScore += gain;
 
     ++deckIndex;
 
-    // Trouble šůt
     std::cout << "Deck index: " << deckIndex << " / " << tileDeck.size() << std::endl;
-
 
     if (deckIndex >= (int)tileDeck.size()) {
         std::cout << "=== GAME OVER ===" << std::endl;
@@ -30,25 +32,31 @@ void Board::placeTile(int q, int r, const Tile &tile) {
         return;
     }
 
-
     std::cout << "Placed tile at (" << q << ", " << r
               << "), gained " << gain
               << " points. Total: " << totalScore << std::endl;
 }
 
-
-void Board::draw(Vector2 origin) const {
+// ====================================================================
+//  Vykreslení všech položených dílků na herní plochu
+// ====================================================================
+void Board::draw(Vector2 origin, const Font& font, const Theme& theme) const {
     for (auto &[pos, tile] : tiles) {
         Vector2 pixel = hex_to_pixel(layout, pos);
         pixel.x += origin.x;
         pixel.y += origin.y;
-        tile.draw(pixel, layout.size);
+        tile.draw(pixel, layout.size, font, false, theme);  // 🟢 používá aktuální font
     }
 }
 
+// ====================================================================
+//  Vykreslení šestiúhelníkové mřížky
+// ====================================================================
 void Board::drawGrid(Vector2 origin, int radius) const {
     for (int q = -radius; q <= radius; ++q) {
-        for (int r = std::max(-radius, -q - radius); r <= std::min(radius, -q + radius); ++r) {
+        for (int r = std::max(-radius, -q - radius);
+             r <= std::min(radius, -q + radius); ++r)
+        {
             Hex h(q, r);
             Vector2 p = hex_to_pixel(layout, h);
             p.x += origin.x;
@@ -58,13 +66,18 @@ void Board::drawGrid(Vector2 origin, int radius) const {
     }
 }
 
-
+// ====================================================================
+//  Určení hexu podle pozice myši
+// ====================================================================
 Hex Board::getHexAtPixel(Vector2 pixel, Vector2 origin) const {
     pixel.x -= origin.x;
     pixel.y -= origin.y;
     return pixel_to_hex(layout, pixel);
 }
 
+// ====================================================================
+//  Vrátí sousedy hexu (6 směrů)
+// ====================================================================
 std::vector<Hex> Board::getNeighbors(const Hex &h) const {
     std::vector<Hex> n;
     for (int i = 0; i < 6; ++i)
@@ -72,7 +85,9 @@ std::vector<Hex> Board::getNeighbors(const Hex &h) const {
     return n;
 }
 
-// === ZÁSOBNÍK DLAŽDIC ===
+// ====================================================================
+//  Vygeneruje zásobník všech dílků pro hru
+// ====================================================================
 void Board::generateTileDeck(int count) {
     tileDeck.clear();
     tileDeck.reserve(count);
@@ -90,25 +105,38 @@ void Board::generateTileDeck(int count) {
     deckIndex = 3;
 }
 
-void Board::drawTileStack(Vector2 origin) const {
+// ====================================================================
+// 🧩 Zobrazení zásobníku dlaždic (vpravo od hrací plochy)
+// ====================================================================
+void Board::drawTileStack(Vector2 origin, const Font& font, const Theme& theme) const {
     float spacing = layout.size * 2.5f;
     Vector2 base = {origin.x + 400, origin.y - 100};
 
-    DrawText(TextFormat("Deck: %d / %d", (int)tileDeck.size() - deckIndex, (int)tileDeck.size()),
-             base.x - 20, base.y - 100, 20, DARKGRAY);
-    DrawText("Next tiles:", base.x - 20, base.y - 70, 20, DARKGRAY);
+    // text „Deck: X / Y“
+    std::string deckText = TextFormat("Deck: %d / %d",
+        (int)tileDeck.size() - deckIndex,
+        (int)tileDeck.size());
+    DrawTextEx(font, deckText.c_str(),
+               {base.x - 20, base.y - 100}, 20, 0, DARKGRAY);
 
-    // zobraz náhled dalších previewCount dílků z decku
+    // text „Next tiles:“
+    DrawTextEx(font, "Next tiles:",
+               {base.x - 20, base.y - 70}, 20, 0, DARKGRAY);
+
+    // náhled následujících dílků
     for (int i = 0; i < previewCount; ++i) {
         int idx = deckIndex + i;
         if (idx >= (int)tileDeck.size()) break;
 
         Vector2 pos = {base.x, base.y + i * spacing};
         bool selected = (i == 0); // první je aktivní tile
-        tileDeck[idx].draw(pos, layout.size, selected);
+        tileDeck[idx].draw(pos, layout.size, font, selected, theme);  //  font
     }
 }
 
+// ====================================================================
+//  Reakce na kliknutí myší (na herní plochu i zásobník)
+// ====================================================================
 void Board::handleClick(Vector2 mouse, Vector2 origin) {
     // --- Kliknutí na hex na hrací ploše ---
     Hex hex = getHexAtPixel(mouse, origin);
@@ -116,7 +144,7 @@ void Board::handleClick(Vector2 mouse, Vector2 origin) {
     p.x += origin.x;
     p.y += origin.y;
 
-    // Kontrola borady, že je hráč v rozsahu
+    // Kontrola hranic herní desky
     int R = 4;
     int s = -hex.q - hex.r;
     if (std::abs(hex.q) > R || std::abs(hex.r) > R || std::abs(s) > R) {
@@ -127,9 +155,8 @@ void Board::handleClick(Vector2 mouse, Vector2 origin) {
     float dx = mouse.x - p.x;
     float dy = mouse.y - p.y;
     if (std::sqrt(dx * dx + dy * dy) < layout.size) {
-        if (isOccupied(hex)) {
-            return;
-        }
+        if (isOccupied(hex)) return;
+
         Tile chosen = tileDeck[deckIndex];
         placeTile(hex.q, hex.r, chosen);
         tileStack[selectedIndex] = Tile(); // nahradíme novým
@@ -150,6 +177,9 @@ void Board::handleClick(Vector2 mouse, Vector2 origin) {
     }
 }
 
+// ====================================================================
+//  Pomocné funkce
+// ====================================================================
 bool Board::isOccupied(const Hex& h) const {
     return tiles.find(h) != tiles.end();
 }
@@ -163,41 +193,28 @@ void Board::rotateSelectedTile(bool counter) {
         tileDeck[deckIndex].rotateClockwise();
 }
 
+// ====================================================================
+//  Vyhledání všech „vortexů“ kolem zadaného dílku
+// ====================================================================
 std::vector<Vertex> Board::getVortexesAround(const Hex &h) const {
     std::vector<Vertex> result;
-
-    // Hledá sousdy
     auto neighbors = getNeighbors(h);
 
-    // Pokud tile neexistuje (a co když tu je), nic nepočítá
     auto itC = tiles.find(h);
     if (itC == tiles.end()) return result;
     const Tile &center = itC->second;
 
-    // Pro každý roh hledáme (6 kolem hexu) - oprava PSÁT SPRÁVNĚ NEIGHBOR  
     for (int i = 0; i < 6; ++i) {
-        // soused vlevo a vpravo od aktuálního rohu
         Hex left = neighbors[i];
         Hex right = neighbors[(i + 1) % 6];
 
         auto itL = tiles.find(left);
         auto itR = tiles.find(right);
-
-        // musí exisotvat všechny vole pčio au, všechny tiles (centrální + 2 sousedé)
         if (itL == tiles.end() || itR == tiles.end()) continue;
 
         const Tile &tileL = itL->second;
         const Tile &tileR = itR->second;
 
-        // A teď pozor, jdem si vysvětlit tyto indexy, protože by ses po tom
-        // (tak za 30 miniut už ztratil
-        // Takže:
-        // i = roh smeřem od středu po směru hodinek
-        // hrana center[i] míří ven do souseda "i"
-        // Hrana tile[(i+2) % 6] míří k centru
-        // Hrana tile[(i+4) % 6] míří k centru
-        // -> tyto tři hrany se setjaí ve stejném hrou
-        
         Edge eC = center.edges[i];
         Edge eL = tileL.edges[(i + 2) % 6];
         Edge eR = tileR.edges[(i + 4) % 6];
@@ -208,10 +225,12 @@ std::vector<Vertex> Board::getVortexesAround(const Hex &h) const {
     return result;
 }
 
+// ====================================================================
+//  Vyhodnocení všech nových vortexů (bodování)
+// ====================================================================
 int Board::evaluateVortexes(const std::vector<Vertex> &vortexes) {
     int sum = 0;
     for (auto &v : vortexes) {
-        // vytvoříme setříděný klíč (aby byla kombinace jedinečná bez ohledu na pořadí)
         auto triple = std::array<Hex, 3>{v.ha, v.hb, v.hc};
         std::sort(triple.begin(), triple.end(),
                   [](const Hex &x, const Hex &y){
@@ -220,13 +239,10 @@ int Board::evaluateVortexes(const std::vector<Vertex> &vortexes) {
 
         auto key = std::make_tuple(triple[0], triple[1], triple[2]);
 
-        // ⛔ Pokud už byl tento vortex jednou započítán, přeskočíme ho
         if (evaluatedVortexSet.find(key) != evaluatedVortexSet.end())
             continue;
-        // ✅ Jinak ho uložíme jako nově spočítaný
         evaluatedVortexSet.insert(key);
 
-        // 📈 Vyhodnocení bodů
         if (v.isValid())
             sum += v.evaluate();
         else
@@ -235,10 +251,12 @@ int Board::evaluateVortexes(const std::vector<Vertex> &vortexes) {
     return sum;
 }
 
+// ====================================================================
+//  Hover efekt (zvýraznění místa pod kurzorem)
+// ====================================================================
 void Board::updateHover(Vector2 mouse, Vector2 origin) {
     Hex h = getHexAtPixel(mouse, origin);
 
-    // validace: mimo hranice hrací plochy -> zruší hover
     int s = -h.q - h.r;
     int R = 4;
     if (std::abs(h.q) > R || std::abs(h.r) > R || std::abs(s) > R) {
@@ -257,11 +275,13 @@ void Board::drawHoverHighlight(Vector2 origin) const {
     pos.x += origin.x;
     pos.y += origin.y;
 
-    // zvýraznění hexu
     DrawPolyLines(pos, 6, layout.size * 1.02f, 30, Fade(ORANGE, 0.6f));
 }
 
-void Board::drawGhostTile(Vector2 origin) const {
+// ====================================================================
+//  Vykreslení „ducha“ dílku pod kurzorem (preview)
+// ====================================================================
+void Board::drawGhostTile(Vector2 origin, const Font& font, const Theme& theme) const {
     if (!hoverHex.has_value() || tileDeck.empty() || deckIndex >= (int)tileDeck.size())
         return;
 
@@ -273,11 +293,9 @@ void Board::drawGhostTile(Vector2 origin) const {
     p.y += origin.y;
 
     float ghostScale = 0.98f;
-    Color tint = {255,255,255,150};
 
     const Tile &ghostTile = tileDeck[deckIndex];
-
-    ghostTile.draw(p, layout.size * ghostScale, false);
+    ghostTile.draw(p, layout.size * ghostScale, font, false, theme); // Aktuální font
     DrawPolyLines(p, 6, layout.size, 30, Fade(DARKGRAY, 0.5f));
 }
 
