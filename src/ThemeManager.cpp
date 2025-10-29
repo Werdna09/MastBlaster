@@ -2,37 +2,38 @@
 
 ThemeManager::ThemeManager() {
     themes = {
-        // 🎨 1. Neutrální světle šedý motiv
         {
             "Classic",
-            Color{245, 245, 245, 255},   // background
-            Color{220, 220, 220, 255},   // tile fill
-            DARKGRAY,                    // tile outline
-            SKYBLUE,                     // number color
-            MAROON,                      // operator color
-            GOLD                         // highlight
+            RAYWHITE,                // background
+            LIGHTGRAY,               // tileFill
+            DARKGRAY,                // tileOutline
+            DARKBLUE,                // numberColor
+            MAROON,                  // operatorColor
+            GOLD,                    // highlightColor
+            BLACK,                   // textColor
+            MAROON                   // scoreColor
         },
-
-        // 🌈 2. Neon – výrazné barvy
         {
-            "Neon",
-            Color{10, 10, 20, 255},      // background
-            Color{25, 25, 50, 255},      // tile fill
-            Color{100, 255, 200, 255},   // outline
-            Color{0, 255, 150, 255},     // numbers
-            Color{255, 100, 150, 255},   // operators
-            Color{255, 200, 0, 255}      // highlight
+            "Dark",
+            Color{25, 25, 35, 255},  // background
+            Color{40, 40, 55, 255},  // tileFill
+            Color{70, 70, 90, 255},  // tileOutline
+            SKYBLUE,                 // numberColor
+            ORANGE,                  // operatorColor
+            GOLD,                    // highlightColor
+            LIGHTGRAY,               // textColor
+            GOLD                     // scoreColor
         },
-
-        // 🕯️ 3. Dark Fantasy – kontrastní teplý styl
         {
-            "Dark Fantasy",
-            Color{20, 10, 5, 255},       // background
-            Color{40, 20, 10, 255},      // tile fill
-            Color{100, 80, 50, 255},     // outline
-            Color{255, 230, 180, 255},   // numbers
-            Color{255, 130, 80, 255},    // operators
-            Color{255, 200, 60, 255}     // highlight
+            "Future",
+            Color{10, 15, 25, 255},  // background
+            Color{20, 30, 60, 255},  // tileFill
+            Color{60, 80, 140, 255}, // tileOutline
+            Color{80, 200, 255, 255},// numberColor
+            Color{255, 160, 60, 255},// operatorColor
+            Color{255, 220, 120, 255},// highlightColor
+            Color{200, 220, 255, 255},// textColor
+            Color{255, 200, 60, 255} // scoreColor
         }
     };
 }

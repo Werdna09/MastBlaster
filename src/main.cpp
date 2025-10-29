@@ -8,7 +8,8 @@
 // ================================================================
 // 🎮 Stavy aplikace
 // ================================================================
-enum class AppState { MENU, PLAYING, PAUSED, SETTINGS, GAMEOVER, EXITING };
+enum class AppState { MENU, MODE_SELECT, PLAYING, PAUSED, SETTINGS, GAMEOVER, EXITING };
+enum class GameMode { TILE_LIMIT, TIME_LIMIT };
 
 // Struktura pro jednoduchá tlačítka
 struct Button {
@@ -49,9 +50,11 @@ int main() {
     fontMgr.loadAll(); // načtení všech fontů
 
     AppState state = AppState::MENU;
+    GameMode mode = GameMode::TILE_LIMIT;
     Board board;
     Vector2 center = {640, 400};
     int gridRadius = 4;
+    float timeRemaining = 180.0f;
 
     // --- základní tlačítka ---
     Button btnPlay     {{540,300,200,48}, "Play"};
@@ -67,18 +70,17 @@ int main() {
     while (!WindowShouldClose()) {
         BeginDrawing();
         ClearBackground(themeMgr.get().background);
+        const Theme& theme = themeMgr.get();
 
         // ============================================================
         // 🏠 MENU
         // ============================================================
         if (state == AppState::MENU) {
-            DrawTextEx(fontMgr.get(), "MathMosaic", {460, 180}, 48, 0, DARKBLUE);
-            DrawTextEx(fontMgr.get(), "v1.3.0", {620, 235}, 20, 0, GRAY);
+            DrawTextEx(fontMgr.get(), "MathMosaic", {460, 180}, 48, 0, theme.operatorColor);
+            DrawTextEx(fontMgr.get(), "v1.3.0", {620, 235}, 20, 0, theme.textColor);
 
             if (drawButton(btnPlay, fontMgr.get())) {
-                board = Board{};
-                board.generateTileDeck(50);
-                state = AppState::PLAYING;
+                state = AppState::MODE_SELECT;
             }
             if (drawButton(btnSettings, fontMgr.get())) {
                 state = AppState::SETTINGS;
@@ -87,6 +89,39 @@ int main() {
                 state = AppState::EXITING;
             }
         }
+
+        // ============================================================
+        // 🎮 MODE SELECTION (submenu pod "Play")
+        // ============================================================
+        else if (state == AppState::MODE_SELECT) {
+            DrawTextEx(fontMgr.get(), "Select Game Mode", {450, 180}, 40, 0, theme.operatorColor);
+
+            Button btnTile {{540, 300, 200, 48}, "Tile Mode"};
+            Button btnTime {{540, 360, 200, 48}, "Time Mode"};
+            Button btnBack {{540, 420, 200, 48}, "Back"};
+
+            if (drawButton(btnTile, fontMgr.get())) {
+                mode = GameMode::TILE_LIMIT;
+                board = Board{};
+                board.generateTileDeck(50);
+                state = AppState::PLAYING;
+                timeRemaining = 180.0f; // <======== Toto možná bude problém, zde zde zde zde zde zde zde z 
+            }
+
+            if (drawButton(btnTime, fontMgr.get())) {
+                mode = GameMode::TIME_LIMIT;
+                board = Board{};
+                board.generateTileDeck(90);
+                state = AppState::PLAYING;
+                timeRemaining = 180.0f;
+            }
+
+            if (drawButton(btnBack, fontMgr.get())) {
+                state = AppState::MENU;
+            }
+        }
+
+
 
         // ============================================================
         // 🎲 HRACÍ SCÉNA
@@ -98,7 +133,16 @@ int main() {
             // kliknutí na herní plochu
             if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
                 board.handleClick(mouse, center);
-                if (board.isGameOver()) state = AppState::GAMEOVER;
+                if (mode == GameMode::TILE_LIMIT && board.isGameOver())
+                    state = AppState::GAMEOVER;
+            }
+
+            if (mode == GameMode::TIME_LIMIT) {
+                timeRemaining -= GetFrameTime();
+                if (timeRemaining <= 0.0f) {
+                    timeRemaining = 0.0f;
+                    state = AppState::GAMEOVER;
+                }
             }
 
             // rotace dílku
@@ -112,10 +156,25 @@ int main() {
                 state = AppState::PAUSED;
 
 
+            // --- UI ---
+            if (mode == GameMode::TILE_LIMIT) {
+                DrawTextEx(fontMgr.get(), "MathMosaic - Tile mode", {440, 20}, 22, 0, theme.textColor);
+                std::string scoreText = TextFormat("Tiles: %d / %d",
+                        board.getPlacedTileCount(),
+                        board.getTotalTileCount());
+                //DrawTextEx(fontMgr.get(), scoreText.c_str(), {560, 56}, 22, 0, theme.scoreColor);
+            } else {
+                DrawTextEx(fontMgr.get(), "MathMosaic - Time mode", {440, 20}, 22, 0, theme.textColor);
+                std::string timeText = TextFormat("Time: %.0f s", timeRemaining, board.getScore());
+                DrawTextEx(fontMgr.get(), timeText.c_str(), {800, 56}, 22, 0, theme.scoreColor);
+            }
+
+
             // --- vykreslení celé hry ---
-            DrawTextEx(fontMgr.get(), "MathMosaic – Play", {440, 20}, 24, 0, DARKBLUE);
+            // DrawTextEx(fontMgr.get(), "MathMosaic – Play", {440, 20}, 24, 0, theme.operatorColor);
             std::string scoreText = TextFormat("Score: %d", board.getScore());
-            DrawTextEx(fontMgr.get(), scoreText.c_str(), {560, 56}, 22, 0, BLACK);
+            DrawTextEx(fontMgr.get(), scoreText.c_str(), {560, 56}, 22, 0, theme.scoreColor);
+
 
             board.drawGrid(center, gridRadius);
             board.drawHoverHighlight(center);
@@ -157,6 +216,7 @@ int main() {
             if (drawButton(btnRestart, fontMgr.get())) {
                 board = Board{};
                 board.generateTileDeck(50);
+                timeRemaining = 180.0f;
                 pauseFade = 0.0f;
                 state = AppState::PLAYING;
             }
@@ -169,7 +229,7 @@ int main() {
                 return 0;
             }
 
-            // 🔹 hint dole
+            //  hint dole
             DrawTextEx(
                     fontMgr.get(),
                     "Press ESC to resume",
@@ -178,7 +238,9 @@ int main() {
                     Fade(LIGHTGRAY, 0.7f * pauseFade)
                     );
 
-            // 🔹 ESC opět obnoví hru
+            DrawTextEx(fontMgr.get(), "Press ESC to resume", {530, 580}, 20, 0,
+                    Fade(LIGHTGRAY, 0.7f * pauseFade));
+            //  ESC opět obnoví hru
             if (IsKeyPressed(KEY_ESCAPE)) {
                 pauseFade = 0.0f;
                 state = AppState::PLAYING;
@@ -190,7 +252,7 @@ int main() {
         // ⚙ SETTINGS
         // ============================================================
         else if (state == AppState::SETTINGS) {
-            DrawTextEx(fontMgr.get(), "Settings", {540, 120}, 40, 0, BLACK);
+            DrawTextEx(fontMgr.get(), "Settings", {540, 120}, 40, 0, theme.textColor);
 
             Vector2 m = GetMousePosition();
 
@@ -208,7 +270,7 @@ int main() {
             // GRID SIZE
             // ========================================================
             int yGrid = 220;
-            DrawTextEx(fontMgr.get(), "Grid radius:", {520, (float)yGrid}, 22, 0, DARKGRAY);
+            DrawTextEx(fontMgr.get(), "Grid radius:", {520, (float)yGrid}, 22, 0, theme.textColor);
 
             Rectangle minus = {520, (float)(yGrid + 40), 40, 40};
             Rectangle box   = {570, (float)(yGrid + 40), 140, 40};
@@ -228,7 +290,7 @@ int main() {
             // FONT SELECTION
             // ========================================================
             int yFont = yGrid + 120;
-            DrawTextEx(fontMgr.get(), "Font:", {520, (float)yFont}, 22, 0, DARKGRAY);
+            DrawTextEx(fontMgr.get(), "Font:", {520, (float)yFont}, 22, 0, theme.textColor);
 
             Rectangle fontLeft  = {520, (float)(yFont + 40), 40, 40};
             Rectangle fontBox   = {570, (float)(yFont + 40), 140, 40};
@@ -267,7 +329,7 @@ int main() {
             // THEME SELECTION
             // ========================================================
             int yTheme = yFont + 200;
-            DrawTextEx(fontMgr.get(), "Theme:", {520, (float)yTheme}, 22, 0, DARKGRAY);
+            DrawTextEx(fontMgr.get(), "Theme:", {520, (float)yTheme}, 22, 0, theme.textColor);
 
             Rectangle themeLeft  = {520, (float)(yTheme + 40), 40, 40};
             Rectangle themeBox   = {570, (float)(yTheme + 40), 140, 40};
@@ -296,10 +358,19 @@ int main() {
         // ============================================================
         else if (state == AppState::GAMEOVER) {
             ClearBackground(RAYWHITE);
-            DrawTextEx(fontMgr.get(), "GAME OVER", {520, 250}, 50, 0, RED);
+
+            DrawTextEx(fontMgr.get(), "GAME OVER", {520, 250}, 50, 0, theme.operatorColor);
+
+            // ZDE TOTO JE ASI ZBYTEČNÉ, ZATÍM TO NECHÁM ZAKOMENTOVANÉ, JE TO SICE JEN VYKRESLOVÁNÍ INFA, ALE WHO KNOWS...
+            // if (mode == GameMode::TIME_LIMIT)
+            //     DrawTextEx(fontMgr.get(), "Time's up!", {540, 320}, 32, 0, theme.operatorColor);
+            // else
+            //     DrawTextEx(fontMgr.get(), "No tiles left!", {520, 320}, 32, 0, theme.operatorColor);
+
 
             std::string finalText = TextFormat("Final Score: %d", board.getScore());
-            DrawTextEx(fontMgr.get(), finalText.c_str(), {530, 330}, 30, 0, DARKGRAY);
+            DrawTextEx(fontMgr.get(), finalText.c_str(), {530, 330}, 30, 0, theme.scoreColor);
+
 
             Button retry {{540, 420, 200, 48}, "Play again"};
             Button menu  {{540, 480, 200, 48}, "Main Menu"};
@@ -308,7 +379,8 @@ int main() {
             if (drawButton(retry, fontMgr.get())) {
                 board = Board{};
                 board.generateTileDeck(50);
-                state = AppState::PLAYING;
+                timeRemaining = 180.0f;
+                state = AppState::MODE_SELECT;
             }
             if (drawButton(menu, fontMgr.get()))
                 state = AppState::MENU;

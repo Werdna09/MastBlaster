@@ -33,8 +33,8 @@ void Board::placeTile(int q, int r, const Tile &tile) {
     }
 
     std::cout << "Placed tile at (" << q << ", " << r
-              << "), gained " << gain
-              << " points. Total: " << totalScore << std::endl;
+        << "), gained " << gain
+        << " points. Total: " << totalScore << std::endl;
 }
 
 // ====================================================================
@@ -47,6 +47,31 @@ void Board::draw(Vector2 origin, const Font& font, const Theme& theme) const {
         pixel.y += origin.y;
         tile.draw(pixel, layout.size, font, false, theme);  // 🟢 používá aktuální font
     }
+
+    // === SCORE POPUPS ===
+    for (auto& popup : scorePopups) {
+        popup.timer += GetFrameTime();
+
+        float life = 1.0f;               // celková délka animace
+        float t = popup.timer / life;
+        if (t > 1.0f) continue;
+
+        // 🔹 Animace: scale + fade + pohyb nahoru
+        float scale = 1.0f + 0.5f * sinf(t * PI);
+        Color color = Fade(GOLD, 1.0f - t);
+
+        char buf[16];
+        snprintf(buf, sizeof(buf), "+%d", popup.value);
+
+        int fontSize = (int)(24 * scale);
+        Vector2 ts = MeasureTextEx(GetFontDefault(), buf, fontSize, 0);
+        Vector2 pos = {
+            popup.pos.x - ts.x / 2,
+            popup.pos.y - 30.0f * t - ts.y / 2  // mírný pohyb nahoru
+        };
+
+        DrawTextEx(GetFontDefault(), buf, pos, fontSize, 0, color);
+    }
 }
 
 // ====================================================================
@@ -55,7 +80,7 @@ void Board::draw(Vector2 origin, const Font& font, const Theme& theme) const {
 void Board::drawGrid(Vector2 origin, int radius) const {
     for (int q = -radius; q <= radius; ++q) {
         for (int r = std::max(-radius, -q - radius);
-             r <= std::min(radius, -q + radius); ++r)
+                r <= std::min(radius, -q + radius); ++r)
         {
             Hex h(q, r);
             Vector2 p = hex_to_pixel(layout, h);
@@ -102,7 +127,7 @@ void Board::generateTileDeck(int count) {
     for (int i = 0; i < 3 && i < count; ++i)
         tileStack.push_back(tileDeck[i]);
 
-    deckIndex = 3;
+    deckIndex = 0;   /// Zde bylo 3
 }
 
 // ====================================================================
@@ -114,14 +139,14 @@ void Board::drawTileStack(Vector2 origin, const Font& font, const Theme& theme) 
 
     // text „Deck: X / Y“
     std::string deckText = TextFormat("Deck: %d / %d",
-        (int)tileDeck.size() - deckIndex,
-        (int)tileDeck.size());
+            (int)tileDeck.size() - deckIndex,
+            (int)tileDeck.size());
     DrawTextEx(font, deckText.c_str(),
-               {base.x - 20, base.y - 100}, 20, 0, DARKGRAY);
+            {base.x - 20, base.y - 100}, 20, 0, DARKGRAY);
 
     // text „Next tiles:“
     DrawTextEx(font, "Next tiles:",
-               {base.x - 20, base.y - 70}, 20, 0, DARKGRAY);
+            {base.x - 20, base.y - 70}, 20, 0, DARKGRAY);
 
     // náhled následujících dílků
     for (int i = 0; i < previewCount; ++i) {
@@ -233,9 +258,9 @@ int Board::evaluateVortexes(const std::vector<Vertex> &vortexes) {
     for (auto &v : vortexes) {
         auto triple = std::array<Hex, 3>{v.ha, v.hb, v.hc};
         std::sort(triple.begin(), triple.end(),
-                  [](const Hex &x, const Hex &y){
-                      return std::tie(x.q, x.r, x.s) < std::tie(y.q, y.r, y.s);
-                  });
+                [](const Hex &x, const Hex &y){
+                return std::tie(x.q, x.r, x.s) < std::tie(y.q, y.r, y.s);
+                });
 
         auto key = std::make_tuple(triple[0], triple[1], triple[2]);
 
@@ -243,10 +268,17 @@ int Board::evaluateVortexes(const std::vector<Vertex> &vortexes) {
             continue;
         evaluatedVortexSet.insert(key);
 
-        if (v.isValid())
+        if (v.isValid()) {
+            int gained = v.evaluate();
             sum += v.evaluate();
-        else
+
+            Vector2 popupPos = hex_to_pixel(layout, v.ha);
+            popupPos.x += 640;
+            popupPos.y += 400;
+            scorePopups.push_back({popupPos, gained});
+        } else {
             sum -= v.penaltyValue();
+        }
     }
     return sum;
 }
@@ -265,6 +297,8 @@ void Board::updateHover(Vector2 mouse, Vector2 origin) {
     }
 
     hoverHex = h;
+
+    scorePopups.erase(std::remove_if(scorePopups.begin(), scorePopups.end(), [](const ScorePopup& s){ return s.timer > 1.0f; }), scorePopups.end());
 }
 
 void Board::drawHoverHighlight(Vector2 origin) const {
