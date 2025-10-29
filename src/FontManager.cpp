@@ -6,7 +6,7 @@ void FontManager::loadAll() {
     const std::vector<std::pair<std::string, std::string>> fontData = {
         {"Roboto Mono",     "../assets/fonts/RobotoMono-VariableFont_wght.ttf"},
         {"Fira Mono",       "../assets/fonts/FiraMono-Regular.ttf"},
-        {"Source Code Pro", "../assets/fonts/SourceCodePro-VariableFont_wght.ttf"}
+        {"Source Code", "../assets/fonts/SourceCodePro-VariableFont_wght.ttf"}
     };
     for (const auto &fd : fontData) {   // fd = pair<string, string>
         Font f = LoadFontEx(fd.second.c_str(), 32, 0, 0); // načti font

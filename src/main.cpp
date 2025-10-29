@@ -4,12 +4,14 @@
 #include "raylib.h"
 #include <ctime>
 #include <string>
+#include <fstream>
+#include <algorithm>
 
 // ================================================================
 // 🎮 Stavy aplikace
 // ================================================================
 enum class AppState { MENU, MODE_SELECT, PLAYING, PAUSED, SETTINGS, GAMEOVER, EXITING };
-enum class GameMode { TILE_LIMIT, TIME_LIMIT };
+enum class GameMode { TILE_LIMIT, TIME_LIMIT, DAILY };
 
 // Struktura pro jednoduchá tlačítka
 struct Button {
@@ -37,6 +39,49 @@ static bool drawButton(const Button& b, const Font& font) {
 
     return hover && IsMouseButtonReleased(MOUSE_LEFT_BUTTON);
 }
+
+// ================================================================
+// Daily Mode - pomocné funkce
+// ================================================================
+static unsigned int GetDayilySeed() {
+    time_t t = time(nullptr);
+    tm* now = localtime(&t);
+    return (now->tm_year + 1900) * 10000u + (now->tm_mon + 1) * 100u + now->tm_mday;
+}
+
+static void SaveDailyScore(int score) {
+    time_t t = time(nullptr);
+    tm* now = localtime(&t);
+    char buf[16];
+    strftime(buf, sizeof(buf), "%Y-%m-%d", now);
+    std::ofstream out("daily_scores.txt", std::ios::app);
+    if (out) out << buf << ", " << score << "\n";
+}
+
+static int GetBestScoreToday() {
+    time_t t = time(nullptr);
+    tm* now = localtime(&t);
+    char today[16];
+    strftime(today, sizeof(today), "%Y-%m-%d", now);
+
+    std::ifstream in("daily_scores.txt");
+    if (!in) return 0;
+
+    std::string line;
+    int best = 0;
+    while (std::getline(in, line)) {
+        if (line.rfind(today, 0) == 0) {
+            auto pos = line.find(',');
+            if (pos != std::string::npos) {
+                int s = std::stoi(line.substr(pos + 1));
+                best = std::max(best, s);
+            }
+        }
+    }
+    return best;
+}
+
+
 
 // ================================================================
 // 🧩 Hlavní funkce
@@ -77,7 +122,7 @@ int main() {
         // ============================================================
         if (state == AppState::MENU) {
             DrawTextEx(fontMgr.get(), "MathMosaic", {460, 180}, 48, 0, theme.operatorColor);
-            DrawTextEx(fontMgr.get(), "v1.3.0", {620, 235}, 20, 0, theme.textColor);
+            DrawTextEx(fontMgr.get(), "v1.5.0", {620, 235}, 20, 0, theme.textColor);
 
             if (drawButton(btnPlay, fontMgr.get())) {
                 state = AppState::MODE_SELECT;
@@ -93,12 +138,28 @@ int main() {
         // ============================================================
         // 🎮 MODE SELECTION (submenu pod "Play")
         // ============================================================
-        else if (state == AppState::MODE_SELECT) {
-            DrawTextEx(fontMgr.get(), "Select Game Mode", {450, 180}, 40, 0, theme.operatorColor);
 
-            Button btnTile {{540, 300, 200, 48}, "Tile Mode"};
-            Button btnTime {{540, 360, 200, 48}, "Time Mode"};
-            Button btnBack {{540, 420, 200, 48}, "Back"};
+        else if (state == AppState::MODE_SELECT) {
+            const int buttonWidth = 240;
+            const int buttonHeight = 50;
+            const int spacing = 20;
+            const int startY = 280; // horní pozice prvního tlačítka
+
+            int centerX = GetScreenWidth() / 2 - buttonWidth / 2;
+
+            DrawTextEx(
+                    fontMgr.get(),
+                    "Select Game Mode",
+                    { (float)GetScreenWidth()/2 - MeasureTextEx(fontMgr.get(), "Select Game Mode", 40, 0).x / 2, 150 },
+                    40, 0,
+                    theme.operatorColor
+                    );
+
+            Button btnTile   {{(float)centerX, (float)startY + 0*(buttonHeight + spacing), (float)buttonWidth, (float)buttonHeight}, "Tile Mode"};
+            Button btnTime   {{(float)centerX, (float)startY + 1*(buttonHeight + spacing), (float)buttonWidth, (float)buttonHeight}, "Time Mode"};
+            Button btnDaily  {{(float)centerX, (float)startY + 2*(buttonHeight + spacing), (float)buttonWidth, (float)buttonHeight}, "Daily Mode"};
+            Button btnBack   {{(float)centerX, (float)startY + 3*(buttonHeight + spacing + 20), (float)buttonWidth, (float)buttonHeight}, "Back"};
+
 
             if (drawButton(btnTile, fontMgr.get())) {
                 mode = GameMode::TILE_LIMIT;
@@ -116,8 +177,26 @@ int main() {
                 timeRemaining = 180.0f;
             }
 
+            if (drawButton(btnDaily, fontMgr.get())) {
+                mode = GameMode::DAILY;
+                unsigned int seed = GetDayilySeed();;
+                SetRandomSeed(seed);
+                srand(seed);
+
+                board = Board();
+                board.generateTileDeck(50);
+                state = AppState::PLAYING;
+                timeRemaining = 180.0f;
+
+            }
+
             if (drawButton(btnBack, fontMgr.get())) {
                 state = AppState::MENU;
+            }
+
+            int bestToday = GetBestScoreToday();;
+            if (bestToday > 0) {
+                DrawTextEx(fontMgr.get(), TextFormat("Today's best: %d", bestToday), {520, 520}, 22, 0, theme.scoreColor);
             }
         }
 
@@ -163,6 +242,17 @@ int main() {
                         board.getPlacedTileCount(),
                         board.getTotalTileCount());
                 //DrawTextEx(fontMgr.get(), scoreText.c_str(), {560, 56}, 22, 0, theme.scoreColor);
+            } else if (mode == GameMode::DAILY) {
+                DrawTextEx(fontMgr.get(), "MathMosaic - Daily mode", {420, 20}, 22, 0, theme.textColor);
+                std::string t = TextFormat("Tiles: %d / %d",
+                        board.getPlacedTileCount(),
+                        board.getTotalTileCount());
+                DrawTextEx(fontMgr.get(), t.c_str(), {420, 52}, 22, 0, theme.textColor);
+                // ukázka dnešního bestu vpravo
+                int bestToday = GetBestScoreToday();
+                DrawTextEx(fontMgr.get(), TextFormat("Today's best: %d", bestToday),
+                        {870, 20}, 22, 0, theme.scoreColor);
+
             } else {
                 DrawTextEx(fontMgr.get(), "MathMosaic - Time mode", {440, 20}, 22, 0, theme.textColor);
                 std::string timeText = TextFormat("Time: %.0f s", timeRemaining, board.getScore());
@@ -371,22 +461,44 @@ int main() {
             std::string finalText = TextFormat("Final Score: %d", board.getScore());
             DrawTextEx(fontMgr.get(), finalText.c_str(), {530, 330}, 30, 0, theme.scoreColor);
 
+            if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE)) {
+
+            }
+
 
             Button retry {{540, 420, 200, 48}, "Play again"};
             Button menu  {{540, 480, 200, 48}, "Main Menu"};
             Button exitB {{540, 540, 200, 48}, "Exit"};
 
+            auto maybeSaveDaily = [&](bool condition) {
+                if (!condition) return;
+                if (mode == GameMode::DAILY) {
+                    SaveDailyScore(board.getScore());
+                }     
+            };
+
             if (drawButton(retry, fontMgr.get())) {
+                maybeSaveDaily(true);
+
                 board = Board{};
                 board.generateTileDeck(50);
                 timeRemaining = 180.0f;
                 state = AppState::MODE_SELECT;
             }
-            if (drawButton(menu, fontMgr.get()))
+            if (drawButton(menu, fontMgr.get())) {
+                maybeSaveDaily(true);
                 state = AppState::MENU;
+            }
             if (drawButton(exitB, fontMgr.get())) {
+                maybeSaveDaily(true);
                 CloseWindow();
                 return 0;
+            }
+
+            if (mode == GameMode::DAILY) {
+                int best = GetBestScoreToday();
+                DrawTextEx(fontMgr.get(), TextFormat("Today's best: %d", best), {540, 380}, 22, 0, theme.scoreColor);
+                DrawTextEx(fontMgr.get(), "Your score has been saved to daily_score.txt", {430, 610}, 18, 0, DARKGRAY);
             }
         }
 
